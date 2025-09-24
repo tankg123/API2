@@ -24,8 +24,8 @@ app.get("/", (req, res) => {
     message: "Welcome to API",
     version: "1.0.0",
     endpoints: {
-      revenues: "/api/revenues",
-      channels: "/api/channels",
+      revenues: "/api/revenue",
+      channels: "/api/channel",
     },
   });
 });
