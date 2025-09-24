@@ -25,32 +25,52 @@ exports.getrevenueById = (req, res) => {
   });
 };
 
-// Tạo revenue mới
+// Tạo revenue mới (nếu chưa có trong ngày đó)
 exports.createrevenue = (req, res) => {
   const { idchannel, network, date, views, watch, duration, revenue } =
     req.body;
 
-  if (!idchannel || !network) {
+  if (!idchannel || !network || !date) {
     return res.status(400).json({
       error: "Thiếu thông tin bắt buộc",
-      required: ["idchannel", "network"],
+      required: ["idchannel", "network", "date"],
     });
   }
 
-  Revenue.create(
-    { idchannel, network, date, views, watch, duration, revenue },
-    (err, result) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ error: "Lỗi server", message: err.message });
-      res.status(201).json({
-        success: true,
-        message: "Tạo revenue thành công",
-        data: { id: result.id },
+  // Kiểm tra đã có bản ghi cho idchannel + date chưa
+  Revenue.findByChannelAndDate(idchannel, date, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ error: "Lỗi server", message: err.message });
+    }
+
+    if (row) {
+      // Đã tồn tại → bỏ qua
+      return res.status(200).json({
+        success: false,
+        message: `Đã tồn tại revenue cho channel ${idchannel} vào ngày ${date}, không ghi đè.`,
+        data: row,
       });
     }
-  );
+
+    // Nếu chưa có → tạo mới
+    Revenue.create(
+      { idchannel, network, date, views, watch, duration, revenue },
+      (err, result) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ error: "Lỗi server", message: err.message });
+        }
+        res.status(201).json({
+          success: true,
+          message: "Tạo revenue mới thành công",
+          data: { id: result.id },
+        });
+      }
+    );
+  });
 };
 
 // Cập nhật revenue
