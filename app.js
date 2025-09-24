@@ -15,8 +15,8 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 // Routes
-app.use("/api/revenues", revenueRoutes);
-app.use("/api/channels", channelRoutes);
+app.use("/api/revenue", revenueRoutes);
+app.use("/api/channel", channelRoutes);
 
 // Route mặc định
 app.get("/", (req, res) => {
@@ -24,8 +24,8 @@ app.get("/", (req, res) => {
     message: "Welcome to API",
     version: "1.0.0",
     endpoints: {
-      revenues: "/api/revenue",
-      channels: "/api/channel",
+      revenues: "/api/revenues",
+      channels: "/api/channels",
     },
   });
 });
