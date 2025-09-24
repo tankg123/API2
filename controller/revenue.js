@@ -25,7 +25,7 @@ exports.getrevenueById = (req, res) => {
   });
 };
 
-// Tạo revenue mới (nếu chưa có trong ngày đó)
+//tao
 exports.createrevenue = (req, res) => {
   const { idchannel, network, date, views, watch, duration, revenue } =
     req.body;
@@ -37,7 +37,6 @@ exports.createrevenue = (req, res) => {
     });
   }
 
-  // Kiểm tra đã có bản ghi cho idchannel + date chưa
   Revenue.findByChannelAndDate(idchannel, date, (err, row) => {
     if (err) {
       return res
@@ -46,15 +45,40 @@ exports.createrevenue = (req, res) => {
     }
 
     if (row) {
-      // Đã tồn tại → bỏ qua
+      // Nếu đã có bản ghi nhưng một số field đang null => update
+      if (row.duration === null || row.revenue === null) {
+        const updatedData = {
+          idchannel,
+          network,
+          date,
+          views: views || row.views,
+          watch: watch || row.watch,
+          duration: duration ?? row.duration,
+          revenue: revenue ?? row.revenue,
+        };
+
+        return Revenue.update(row.id, updatedData, (err, result) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ error: "Lỗi server", message: err.message });
+          }
+          res.status(200).json({
+            success: true,
+            message: `Đã cập nhật revenue cho channel ${idchannel} vào ngày ${date}`,
+          });
+        });
+      }
+
+      // Nếu bản ghi đã đầy đủ => bỏ qua
       return res.status(200).json({
         success: false,
-        message: `Đã tồn tại revenue cho channel ${idchannel} vào ngày ${date}, không ghi đè.`,
+        message: `Đã tồn tại revenue đầy đủ cho channel ${idchannel} vào ngày ${date}, không ghi đè.`,
         data: row,
       });
     }
 
-    // Nếu chưa có → tạo mới
+    // Nếu chưa có => tạo mới
     Revenue.create(
       { idchannel, network, date, views, watch, duration, revenue },
       (err, result) => {

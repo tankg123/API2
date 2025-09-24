@@ -29,14 +29,13 @@ class Revenue {
       }
     );
   }
-
   static update(id, revenueData, callback) {
     const { idchannel, network, date, views, watch, duration, revenue } =
       revenueData;
     db.run(
       `UPDATE revenues 
-       SET idchannel = ?, network = ?, date = ?, views = ?, watch = ?, duration = ?, revenue = ?
-       WHERE id = ?`,
+     SET idchannel = ?, network = ?, date = ?, views = ?, watch = ?, duration = ?, revenue = ?
+     WHERE id = ?`,
       [idchannel, network, date, views, watch, duration, revenue, id],
       function (err) {
         callback(err, { changes: this.changes });
