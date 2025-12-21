@@ -3,7 +3,9 @@ const QaModel = require("../models/qa");
 // GET ALL
 exports.getAll = (req, res) => {
   QaModel.getAll((err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
     res.json(rows);
   });
 };
@@ -11,8 +13,12 @@ exports.getAll = (req, res) => {
 // GET BY ID
 exports.getById = (req, res) => {
   QaModel.getById(req.params.id, (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ message: "Not found" });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ message: "Not found" });
+    }
     res.json(row);
   });
 };
@@ -20,40 +26,54 @@ exports.getById = (req, res) => {
 // POST ADD
 exports.create = (req, res) => {
   const { question, traloi } = req.body;
+
   if (!question || !traloi) {
-    return res.status(400).json({ message: "Question và Traloi là bắt buộc" });
+    return res.status(400).json({
+      message: "question và traloi là bắt buộc",
+    });
   }
 
   QaModel.create(question, traloi, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Created", id: result.id });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({
+      status: "success",
+      id: result.id,
+    });
   });
 };
 
-// PUT UPDATE (question hoặc traloi theo id)
+// PUT UPDATE
 exports.update = (req, res) => {
   const { question, traloi } = req.body;
 
   QaModel.update(req.params.id, question, traloi, (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Updated successfully" });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ status: "updated" });
   });
 };
 
 // DELETE
 exports.delete = (req, res) => {
   QaModel.delete(req.params.id, (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Deleted successfully" });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ status: "deleted" });
   });
 };
 
-// ✅ POST QUESTION → trả về Traloi
+// ✅ ASK – TUYỆT ĐỐI KHÔNG DÙNG traloi
 exports.ask = (req, res) => {
   const { question } = req.body;
 
   if (!question) {
-    return res.status(400).json({ message: "Question is required" });
+    return res.status(400).json({
+      message: "question is required",
+    });
   }
 
   QaModel.findAnswerByQuestion(question, (err, row) => {
@@ -68,7 +88,7 @@ exports.ask = (req, res) => {
       });
     }
 
-    // ✅ FIX Ở ĐÂY
+    // ✅ DÒNG QUYẾT ĐỊNH – FIX LỖI
     return res.json({
       status: "success",
       answer: row.traloi,
