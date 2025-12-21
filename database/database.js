@@ -1,7 +1,6 @@
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
-// Tạo hoặc mở database file
 const db = new sqlite3.Database(
   path.resolve(__dirname, "../data/revenues.db"),
   (err) => {
@@ -13,9 +12,8 @@ const db = new sqlite3.Database(
   }
 );
 
-// Tạo bảng nếu chưa có
 db.serialize(() => {
-  // Bảng revenues
+  // revenues
   db.run(`
     CREATE TABLE IF NOT EXISTS revenues (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +28,7 @@ db.serialize(() => {
     )
   `);
 
-  // Bảng channels
+  // channels
   db.run(`
     CREATE TABLE IF NOT EXISTS channels (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +36,16 @@ db.serialize(() => {
       avatar TEXT,
       subs INTEGER DEFAULT 0,
       views INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // ✅ QA – Question / Traloi
+  db.run(`
+    CREATE TABLE IF NOT EXISTS qa (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question TEXT NOT NULL,
+      traloi TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
