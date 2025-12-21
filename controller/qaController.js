@@ -1,17 +1,19 @@
 const QA = require("../models/qa");
 
-module.exports = {
-  getAll: async (req, res) => {
+exports.getAll = async (req, res) => {
+  try {
     const data = await QA.getAll();
     res.json({ status: "success", data });
-  },
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-  ask: async (req, res) => {
+exports.ask = async (req, res) => {
+  try {
     const { question } = req.body;
     if (!question) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Missing question" });
+      return res.status(400).json({ error: "Missing question" });
     }
 
     const row = await QA.getByQuestion(question);
@@ -20,25 +22,39 @@ module.exports = {
     }
 
     res.json({ status: "success", traloi: row.traloi });
-  },
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-  create: async (req, res) => {
+exports.create = async (req, res) => {
+  try {
     const { question, traloi } = req.body;
     const result = await QA.insert(question, traloi);
     res.json({ status: "created", id: result.id });
-  },
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-  update: async (req, res) => {
+exports.update = async (req, res) => {
+  try {
     const { id } = req.params;
     const { question, traloi } = req.body;
 
     const result = await QA.update(id, question, traloi);
     res.json({ status: "updated", changes: result.changes });
-  },
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-  remove: async (req, res) => {
+exports.remove = async (req, res) => {
+  try {
     const { id } = req.params;
     const result = await QA.delete(id);
     res.json({ status: "deleted", changes: result.changes });
-  },
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
