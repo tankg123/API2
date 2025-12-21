@@ -1,16 +1,20 @@
 const QaModel = require("../models/qa");
 
-// GET ALL
+/**
+ * GET ALL QA
+ */
 exports.getAll = (req, res) => {
   QaModel.getAll((err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json(rows);
+    return res.json(rows);
   });
 };
 
-// GET BY ID
+/**
+ * GET QA BY ID
+ */
 exports.getById = (req, res) => {
   QaModel.getById(req.params.id, (err, row) => {
     if (err) {
@@ -19,11 +23,13 @@ exports.getById = (req, res) => {
     if (!row) {
       return res.status(404).json({ message: "Not found" });
     }
-    res.json(row);
+    return res.json(row);
   });
 };
 
-// POST ADD
+/**
+ * CREATE QA
+ */
 exports.create = (req, res) => {
   const { question, traloi } = req.body;
 
@@ -37,14 +43,16 @@ exports.create = (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json({
+    return res.json({
       status: "success",
       id: result.id,
     });
   });
 };
 
-// PUT UPDATE
+/**
+ * UPDATE QA
+ */
 exports.update = (req, res) => {
   const { question, traloi } = req.body;
 
@@ -52,21 +60,26 @@ exports.update = (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json({ status: "updated" });
+    return res.json({ status: "updated" });
   });
 };
 
-// DELETE
+/**
+ * DELETE QA
+ */
 exports.delete = (req, res) => {
   QaModel.delete(req.params.id, (err) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json({ status: "deleted" });
+    return res.json({ status: "deleted" });
   });
 };
 
-// ✅ ASK – TUYỆT ĐỐI KHÔNG DÙNG traloi
+/**
+ * ASK QUESTION → RETURN TRALOI
+ * ❗ CHỈ 1 response – KHÔNG headers sent – KHÔNG biến ảo
+ */
 exports.ask = (req, res) => {
   const { question } = req.body;
 
@@ -78,7 +91,9 @@ exports.ask = (req, res) => {
 
   QaModel.findAnswerByQuestion(question, (err, row) => {
     if (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({
+        error: err.message,
+      });
     }
 
     if (!row) {
@@ -88,7 +103,6 @@ exports.ask = (req, res) => {
       });
     }
 
-    // ✅ DÒNG QUYẾT ĐỊNH – FIX LỖI
     return res.json({
       status: "success",
       answer: row.traloi,
