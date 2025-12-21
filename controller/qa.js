@@ -51,12 +51,15 @@ exports.delete = (req, res) => {
 // ✅ POST QUESTION → trả về Traloi
 exports.ask = (req, res) => {
   const { question } = req.body;
+
   if (!question) {
     return res.status(400).json({ message: "Question is required" });
   }
 
   QaModel.findAnswerByQuestion(question, (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
 
     if (!row) {
       return res.json({
@@ -65,10 +68,10 @@ exports.ask = (req, res) => {
       });
     }
 
-    res.json({
+    // ✅ FIX Ở ĐÂY
+    return res.json({
       status: "success",
       answer: row.traloi,
     });
   });
-  console.log("CREATE QA:", question, traloi);
 };
