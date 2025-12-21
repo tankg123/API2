@@ -1,34 +1,16 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
 
-const revenueRoutes = require("./routes/revenue");
-const channelRoutes = require("./routes/channel");
-const qaRoutes = require("./routes/qa"); // ✅ thêm
+const qaRoutes = require("./routes/qa");
 
 const app = express();
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(helmet());
-app.use(morgan("dev"));
+app.use(bodyParser.json());
 
-app.use("/api/revenue", revenueRoutes);
-app.use("/api/channel", channelRoutes);
-app.use("/api/qa", qaRoutes); // ✅ thêm
+app.use("/api/qa", qaRoutes);
 
-app.get("/", (req, res) => {
-  res.json({
-    message: "Welcome to API",
-    version: "1.1.0",
-    endpoints: {
-      revenue: "/api/revenue",
-      channel: "/api/channel",
-      qa: "/api/qa",
-    },
-  });
+const PORT = 3003;
+app.listen(PORT, () => {
+  console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
 });
-
-module.exports = app;

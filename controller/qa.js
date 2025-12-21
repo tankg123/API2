@@ -1,98 +1,44 @@
-const QaModel = require("../models/qa");
+const QA = require("../models/qa");
 
 module.exports = {
-  // ===== GET ALL =====
-  getAll(req, res) {
-    QaModel.getAll((err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      return res.json(rows);
-    });
+  getAll: async (req, res) => {
+    const data = await QA.getAll();
+    res.json({ status: "success", data });
   },
 
-  // ===== GET BY ID =====
-  getById(req, res) {
-    QaModel.getById(req.params.id, (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      if (!row) {
-        return res.status(404).json({ message: "Not found" });
-      }
-      return res.json(row);
-    });
-  },
-
-  // ===== CREATE =====
-  create(req, res) {
-    const { question, traloi } = req.body;
-
-    if (!question || !traloi) {
-      return res.status(400).json({
-        message: "question và traloi là bắt buộc",
-      });
-    }
-
-    QaModel.create(question, traloi, (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      return res.json({
-        status: "success",
-        id: result.id,
-      });
-    });
-  },
-
-  // ===== UPDATE =====
-  update(req, res) {
-    const { question, traloi } = req.body;
-
-    QaModel.update(req.params.id, question, traloi, (err) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      return res.json({ status: "updated" });
-    });
-  },
-
-  // ===== DELETE =====
-  delete(req, res) {
-    QaModel.delete(req.params.id, (err) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      return res.json({ status: "deleted" });
-    });
-  },
-
-  // ===== ASK =====
-  ask(req, res) {
+  ask: async (req, res) => {
     const { question } = req.body;
-
     if (!question) {
-      return res.status(400).json({
-        message: "question is required",
-      });
+      return res
+        .status(400)
+        .json({ status: "error", message: "Missing question" });
     }
 
-    QaModel.findAnswerByQuestion(question, (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+    const row = await QA.getByQuestion(question);
+    if (!row) {
+      return res.json({ status: "not_found", traloi: null });
+    }
 
-      if (!row) {
-        return res.json({
-          status: "not_found",
-          answer: null,
-        });
-      }
+    res.json({ status: "success", traloi: row.traloi });
+  },
 
-      return res.json({
-        status: "success",
-        answer: row.traloi,
-      });
-    });
+  create: async (req, res) => {
+    const { question, traloi } = req.body;
+    const result = await QA.insert(question, traloi);
+    res.json({ status: "created", id: result.id });
+  },
+
+  update: async (req, res) => {
+    const { id } = req.params;
+    const { question, traloi } = req.body;
+
+    const result = await QA.update(id, question, traloi);
+    res.json({ status: "updated", changes: result.changes });
+  },
+
+  remove: async (req, res) => {
+    const { id } = req.params;
+    const result = await QA.delete(id);
+    res.json({ status: "deleted", changes: result.changes });
   },
 };

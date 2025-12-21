@@ -1,17 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const qaController = require("../controller/qa");
+const controller = require("../controllers/qaController");
 
-// ===== CREATE & ASK =====
-router.post("/", qaController.create);
-router.post("/ask", qaController.ask);
+// GET ALL
+router.get("/", controller.getAll);
 
-// ===== READ =====
-router.get("/", qaController.getAll);
-router.get("/:id", qaController.getById);
+// POST text Question → trả về Traloi
+router.post("/ask", controller.ask);
 
-// ===== UPDATE & DELETE =====
-router.put("/:id", qaController.update);
-router.delete("/:id", qaController.delete);
+// POST add
+router.post("/", controller.create);
+
+// PUT update theo id
+router.put("/:id", controller.update);
+
+// DELETE theo id
+router.delete("/:id", controller.remove);
 
 module.exports = router;
