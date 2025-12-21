@@ -70,4 +70,5 @@ exports.ask = (req, res) => {
       answer: row.traloi,
     });
   });
+  console.log("CREATE QA:", question, traloi);
 };
