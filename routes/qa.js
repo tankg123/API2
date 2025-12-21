@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const qaController = require("../controller/qa");
 
-// ✅ POST trước
+// POST
 router.post("/", qaController.create);
 router.post("/ask", qaController.ask);
 
