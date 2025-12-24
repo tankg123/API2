@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
   res.json({ status: "API Revenue OK" });
 });
 
-app.use("/api/api2, qaRoutes);
+app.use("/api/api2", qaRoutes);
 
 const PORT = process.env.PORT || 3004;
 
