@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/qaController");
+const controller = require("../controller/qaController");
 
 router.get("/", controller.getAll);
 router.post("/ask", controller.ask);
