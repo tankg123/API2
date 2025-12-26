@@ -8,7 +8,7 @@ async function getChannelName(channelId) {
       params: {
         part: "snippet",
         id: channelId,
-        key: process.env.YOUTUBE_API_KEY
+        key: process.env.UCRr51Oo94AXMy7arAby15RA
       }
     }
   );
