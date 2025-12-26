@@ -13,6 +13,7 @@ exports.insert = (data, cb) => {
 };
 
 
+
 exports.getAll = (cb) => {
   db.all("SELECT * FROM channels ORDER BY id DESC", cb);
 };
