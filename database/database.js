@@ -8,6 +8,7 @@ db.serialize(() => {
       channel_name TEXT,
       channel_id TEXT UNIQUE,
       revenue REAL,
+      network TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
