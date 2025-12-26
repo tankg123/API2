@@ -2,12 +2,16 @@ const db = require("../database/database");
 
 exports.insert = (data, cb) => {
   const sql = `
-    INSERT OR REPLACE INTO channels
-    (channel_name, channel_id, revenue, network)
+    INSERT INTO channels (channel_name, channel_id, revenue, network)
     VALUES (?, ?, ?, ?)
+    ON CONFLICT(channel_id) DO UPDATE SET
+      channel_name = excluded.channel_name,
+      revenue = excluded.revenue,
+      network = excluded.network
   `;
   db.run(sql, data, cb);
 };
+
 
 exports.getAll = (cb) => {
   db.all("SELECT * FROM channels ORDER BY id DESC", cb);
