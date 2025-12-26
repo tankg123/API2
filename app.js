@@ -1,19 +1,20 @@
+require("dotenv").config(); // ⭐ BẮT BUỘC
+
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 
-const qaRoutes = require("./routes/channel");
+const channelRoutes = require("./routes/channel");
 
 const app = express();
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // thay cho body-parser
 
 app.get("/", (req, res) => {
   res.json({ status: "API Channel OK" });
 });
 
-app.use("/api/channel", qaRoutes);
+app.use("/api/channel", channelRoutes);
 
 const PORT = process.env.PORT || 3004;
 
