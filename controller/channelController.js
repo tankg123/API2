@@ -8,7 +8,7 @@ async function getChannelName(channelId) {
       params: {
         part: "snippet",
         id: channelId,
-        key: process.env.UCRr51Oo94AXMy7arAby15RA
+        key: process.env.AIzaSyA8Xq3YdgClr2nl6LJqZMS6GReiABB4XJI
       }
     }
   );
