@@ -1,6 +1,6 @@
 const sqlite3 = require("sqlite3").verbose();
 
-const db = new sqlite3.Database("./database.db");
+const db = new sqlite3.Database("./database/database.db");
 
 db.serialize(() => {
   db.run(`
@@ -10,6 +10,7 @@ db.serialize(() => {
       channel_id TEXT UNIQUE,
       revenue REAL,
       network TEXT,
+      month_revenue TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);

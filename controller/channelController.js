@@ -19,15 +19,21 @@ async function getChannelName(channelId) {
 
 /**
  * POST /import
- * REQUIRED: channel_id, revenue, network
+ * REQUIRED: channel_id, revenue, network, month_revenue
  */
 exports.importChannel = async (req, res) => {
   try {
-    const { channel_id, revenue, network } = req.body;
+    const { channel_id, revenue, network, month_revenue } = req.body;
 
-    if (!channel_id || revenue == null || !network) {
+    // 🔒 VALIDATE ĐỦ 4 TRƯỜNG
+    if (
+      !channel_id ||
+      revenue == null ||
+      !network ||
+      !month_revenue
+    ) {
       return res.status(400).json({
-        error: "channel_id, revenue, network are required"
+        error: "channel_id, revenue, network, month_revenue are required"
       });
     }
 
@@ -39,7 +45,7 @@ exports.importChannel = async (req, res) => {
     const finalRevenue = Number(revenue);
 
     Channel.insert(
-      [channel_name, channel_id, finalRevenue, network],
+      [channel_name, channel_id, finalRevenue, network, month_revenue],
       (err) => {
         if (err) {
           return res.status(500).json({ error: err.message });
@@ -50,7 +56,8 @@ exports.importChannel = async (req, res) => {
           channel_name,
           channel_id,
           revenue: finalRevenue,
-          network
+          network,
+          month_revenue
         });
       }
     );
@@ -80,7 +87,13 @@ exports.getAll = (req, res) => {
  */
 exports.update = async (req, res) => {
   const { id } = req.params;
-  const { channel_id, channel_name, revenue, network } = req.body;
+  const {
+    channel_id,
+    channel_name,
+    revenue,
+    network,
+    month_revenue
+  } = req.body;
 
   Channel.getById(id, async (err, row) => {
     if (!row) {
@@ -89,8 +102,10 @@ exports.update = async (req, res) => {
 
     let finalName = channel_name || row.channel_name;
     let finalChannelId = channel_id || row.channel_id;
-    let finalRevenue = revenue != null ? Number(revenue) : row.revenue;
+    let finalRevenue =
+      revenue != null ? Number(revenue) : row.revenue;
     let finalNetwork = network || row.network;
+    let finalMonth = month_revenue || row.month_revenue;
 
     if (channel_id && !channel_name) {
       const fetchedName = await getChannelName(channel_id);
@@ -102,7 +117,13 @@ exports.update = async (req, res) => {
 
     Channel.update(
       id,
-      [finalName, finalChannelId, finalRevenue, finalNetwork],
+      [
+        finalName,
+        finalChannelId,
+        finalRevenue,
+        finalNetwork,
+        finalMonth
+      ],
       (err) => {
         if (err) {
           return res.status(500).json({ error: err.message });
@@ -114,7 +135,8 @@ exports.update = async (req, res) => {
           channel_name: finalName,
           channel_id: finalChannelId,
           revenue: finalRevenue,
-          network: finalNetwork
+          network: finalNetwork,
+          month_revenue: finalMonth
         });
       }
     );

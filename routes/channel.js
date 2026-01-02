@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/channelController");
+const controller = require("../controller/channelController");
 
 router.get("/", controller.getAll);
 router.post("/import", controller.importChannel);
