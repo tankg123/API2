@@ -2,19 +2,24 @@ const axios = require("axios");
 const Channel = require("../models/channel");
 
 async function getChannelName(channelId) {
-  const res = await axios.get(
-    "https://www.googleapis.com/youtube/v3/channels",
-    {
-      params: {
-        part: "snippet",
-        id: channelId,
-        key: process.env.YOUTUBE_API_KEY
+  try {
+    const res = await axios.get(
+      "https://www.googleapis.com/youtube/v3/channels",
+      {
+        params: {
+          part: "snippet",
+          id: channelId,
+          key: process.env.YOUTUBE_API_KEY
+        }
       }
-    }
-  );
+    );
 
-  if (!res.data.items || !res.data.items.length) return null;
-  return res.data.items[0].snippet.title;
+    if (!res.data.items || !res.data.items.length) return null;
+    return res.data.items[0].snippet.title;
+  } catch (err) {
+    // ❗ Không throw – để fallback bên dưới
+    return null;
+  }
 }
 
 /**
@@ -37,10 +42,9 @@ exports.importChannel = async (req, res) => {
       });
     }
 
-    const channel_name = await getChannelName(channel_id);
-    if (!channel_name) {
-      return res.status(404).json({ error: "Channel not found" });
-    }
+    // ✅ Nếu không lấy được name → fallback
+    const fetchedName = await getChannelName(channel_id);
+    const channel_name = fetchedName || "Channel Lỗi";
 
     const finalRevenue = Number(revenue);
 
@@ -62,12 +66,6 @@ exports.importChannel = async (req, res) => {
       }
     );
   } catch (err) {
-    if (err.response) {
-      return res.status(500).json({
-        google_status: err.response.status,
-        google_error: err.response.data
-      });
-    }
     res.status(500).json({ error: err.message });
   }
 };
@@ -107,12 +105,11 @@ exports.update = async (req, res) => {
     let finalNetwork = network || row.network;
     let finalMonth = month_revenue || row.month_revenue;
 
+    // ✅ Nếu đổi channel_id mà không truyền channel_name
+    // → thử fetch, nếu fail thì dùng "Channel Lỗi"
     if (channel_id && !channel_name) {
       const fetchedName = await getChannelName(channel_id);
-      if (!fetchedName) {
-        return res.status(404).json({ error: "Channel ID invalid" });
-      }
-      finalName = fetchedName;
+      finalName = fetchedName || "Channel Lỗi";
     }
 
     Channel.update(

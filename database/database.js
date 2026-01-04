@@ -7,7 +7,7 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS channels (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       channel_name TEXT,
-      channel_id TEXT UNIQUE,
+      channel_id TEXT,
       revenue REAL,
       network TEXT,
       month_revenue TEXT,

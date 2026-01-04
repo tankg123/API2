@@ -1,25 +1,31 @@
 const db = require("../database/database");
 
+/**
+ * INSERT ONLY
+ * Mỗi lần POST = 1 record mới
+ */
 exports.insert = (data, cb) => {
   const sql = `
     INSERT INTO channels
       (channel_name, channel_id, revenue, network, month_revenue)
     VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(channel_id) DO UPDATE SET
-      channel_name  = excluded.channel_name,
-      revenue       = excluded.revenue,
-      network       = excluded.network,
-      month_revenue = excluded.month_revenue
   `;
   db.run(sql, data, cb);
 };
 
 exports.getAll = (cb) => {
-  db.all("SELECT * FROM channels ORDER BY id DESC", cb);
+  db.all(
+    "SELECT * FROM channels ORDER BY id DESC",
+    cb
+  );
 };
 
 exports.getById = (id, cb) => {
-  db.get("SELECT * FROM channels WHERE id = ?", [id], cb);
+  db.get(
+    "SELECT * FROM channels WHERE id = ?",
+    [id],
+    cb
+  );
 };
 
 exports.update = (id, data, cb) => {
@@ -37,5 +43,9 @@ exports.update = (id, data, cb) => {
 };
 
 exports.remove = (id, cb) => {
-  db.run("DELETE FROM channels WHERE id = ?", [id], cb);
+  db.run(
+    "DELETE FROM channels WHERE id = ?",
+    [id],
+    cb
+  );
 };
