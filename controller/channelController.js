@@ -158,25 +158,25 @@ exports.remove = (req, res) => {
 
 
 exports.removeByCondition = (req, res) => {
+  console.log("HEADERS:", req.headers["content-type"]);
+  console.log("BODY:", req.body);
   const { month_revenue, network } = req.body;
 
   if (!month_revenue || !network) {
-    return res.status(400).json({ message: "month_revenue and network are required" });
+    return res.status(400).json({
+      message: "month_revenue and network are required"
+    });
   }
 
-  const sql = `
-    DELETE FROM channels
-    WHERE month_revenue = ?
-      AND network = ?
-  `;
-
-  db.run(sql, [month_revenue, network], function (err) {
+  Channel.removeByCondition(month_revenue, network, (err, deleted) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
+
     res.json({
       success: true,
-      deleted: this.changes
+      deleted
     });
   });
 };
+

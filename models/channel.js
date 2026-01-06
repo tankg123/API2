@@ -49,3 +49,14 @@ exports.remove = (id, cb) => {
     cb
   );
 };
+
+exports.removeByCondition = (month_revenue, network, cb) => {
+  const sql = `
+    DELETE FROM channels
+    WHERE month_revenue = ?
+      AND network = ?
+  `;
+  db.run(sql, [month_revenue, network], function (err) {
+    cb(err, this?.changes || 0);
+  });
+};
