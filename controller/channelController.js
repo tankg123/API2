@@ -155,3 +155,28 @@ exports.remove = (req, res) => {
     });
   });
 };
+
+
+exports.removeByCondition = (req, res) => {
+  const { month_revenue, network } = req.body;
+
+  if (!month_revenue || !network) {
+    return res.status(400).json({ message: "month_revenue and network are required" });
+  }
+
+  const sql = `
+    DELETE FROM channels
+    WHERE month_revenue = ?
+      AND network = ?
+  `;
+
+  db.run(sql, [month_revenue, network], function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({
+      success: true,
+      deleted: this.changes
+    });
+  });
+};
