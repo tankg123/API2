@@ -22,13 +22,22 @@ async function getChannelName(channelId) {
   }
 }
 
+function normalizeChannelId(channelId) {
+  if (!channelId) return channelId;
+  const id = channelId.trim();
+  if (id.startsWith("UC")) return id;
+  return "UC" + id;
+}
+
 /**
  * POST /import
  * REQUIRED: channel_id, revenue, network, month_revenue
  */
 exports.importChannel = async (req, res) => {
   try {
-    const { channel_id, revenue, network, month_revenue } = req.body;
+    const { revenue, network, month_revenue } = req.body;
+    const channel_id = normalizeChannelId(req.body.channel_id);
+
 
     // 🔒 VALIDATE ĐỦ 4 TRƯỜNG
     if (
@@ -99,7 +108,10 @@ exports.update = async (req, res) => {
     }
 
     let finalName = channel_name || row.channel_name;
-    let finalChannelId = channel_id || row.channel_id;
+    let finalChannelId = channel_id
+    ? normalizeChannelId(channel_id)
+    : row.channel_id;
+
     let finalRevenue =
       revenue != null ? Number(revenue) : row.revenue;
     let finalNetwork = network || row.network;
