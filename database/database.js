@@ -11,6 +11,7 @@ db.serialize(() => {
       revenue REAL,
       network TEXT,
       month_revenue TEXT,
+      status TEXT DEFAULT 'active',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);

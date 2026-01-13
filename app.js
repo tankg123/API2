@@ -1,4 +1,8 @@
 require("dotenv").config(); // ⭐ BẮT BUỘC
+console.log("🚀 ChannelHealthCheck service loaded");
+require("./services/channelHealthCheck");
+
+
 
 const express = require("express");
 const cors = require("cors");

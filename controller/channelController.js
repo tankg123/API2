@@ -1,6 +1,9 @@
 const axios = require("axios");
 const Channel = require("../models/channel");
 
+/**
+ * Lấy tên channel – fallback nếu lỗi
+ */
 async function getChannelName(channelId) {
   try {
     const res = await axios.get(
@@ -10,55 +13,105 @@ async function getChannelName(channelId) {
           part: "snippet",
           id: channelId,
           key: process.env.YOUTUBE_API_KEY
-        }
+        },
+        timeout: 10000
       }
     );
 
     if (!res.data.items || !res.data.items.length) return null;
     return res.data.items[0].snippet.title;
-  } catch (err) {
-    // ❗ Không throw – để fallback bên dưới
+  } catch {
     return null;
   }
 }
 
+/**
+ * Chuẩn hoá Channel ID (tự thêm UC nếu thiếu)
+ */
 function normalizeChannelId(channelId) {
   if (!channelId) return channelId;
   const id = channelId.trim();
-  if (id.startsWith("UC")) return id;
-  return "UC" + id;
+  return id.startsWith("UC") ? id : "UC" + id;
+}
+
+/**
+ * Check trạng thái channel (active / die)
+ * Quy ước:
+ * - items > 0  → active
+ * - items = [] → die
+ * - quota / network / 403 → active (không kết luận chết)
+ */
+async function checkChannelStatus(channelId) {
+  try {
+    const res = await axios.get(
+      "https://www.googleapis.com/youtube/v3/channels",
+      {
+        params: {
+          part: "id",
+          id: channelId,
+          key: process.env.YOUTUBE_API_KEY
+        },
+        timeout: 10000
+      }
+    );
+
+    if (res.data.items && res.data.items.length > 0) {
+      return "active";
+    }
+
+    return "die";
+
+  } catch (err) {
+    if (err.response) {
+      const reason =
+        err.response.data?.error?.errors?.[0]?.reason;
+
+      if (reason === "channelNotFound") {
+        return "die";
+      }
+    }
+
+    return "active";
+  }
 }
 
 /**
  * POST /import
  * REQUIRED: channel_id, revenue, network, month_revenue
+ * ACTION:
+ * - normalize channel_id
+ * - check status ngay
+ * - fallback channel_name nếu lỗi
  */
 exports.importChannel = async (req, res) => {
   try {
     const { revenue, network, month_revenue } = req.body;
     const channel_id = normalizeChannelId(req.body.channel_id);
 
-
-    // 🔒 VALIDATE ĐỦ 4 TRƯỜNG
-    if (
-      !channel_id ||
-      revenue == null ||
-      !network ||
-      !month_revenue
-    ) {
+    if (!channel_id || revenue == null || !network || !month_revenue) {
       return res.status(400).json({
         error: "channel_id, revenue, network, month_revenue are required"
       });
     }
 
-    // ✅ Nếu không lấy được name → fallback
+    // 1️⃣ Check status NGAY khi import
+    const status = await checkChannelStatus(channel_id);
+
+    // 2️⃣ Lấy channel name (fallback)
     const fetchedName = await getChannelName(channel_id);
     const channel_name = fetchedName || "Channel Lỗi";
 
     const finalRevenue = Number(revenue);
 
     Channel.insert(
-      [channel_name, channel_id, finalRevenue, network, month_revenue],
+      [
+        channel_name,
+        channel_id,
+        finalRevenue,
+        network,
+        month_revenue,
+        status
+      ],
       (err) => {
         if (err) {
           return res.status(500).json({ error: err.message });
@@ -70,7 +123,8 @@ exports.importChannel = async (req, res) => {
           channel_id,
           revenue: finalRevenue,
           network,
-          month_revenue
+          month_revenue,
+          status
         });
       }
     );
@@ -99,7 +153,8 @@ exports.update = async (req, res) => {
     channel_name,
     revenue,
     network,
-    month_revenue
+    month_revenue,
+    status
   } = req.body;
 
   Channel.getById(id, async (err, row) => {
@@ -107,20 +162,19 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Record not found" });
     }
 
-    let finalName = channel_name || row.channel_name;
-    let finalChannelId = channel_id
-    ? normalizeChannelId(channel_id)
-    : row.channel_id;
+    const finalChannelId = channel_id
+      ? normalizeChannelId(channel_id)
+      : row.channel_id;
 
+    let finalName = channel_name || row.channel_name;
     let finalRevenue =
       revenue != null ? Number(revenue) : row.revenue;
     let finalNetwork = network || row.network;
     let finalMonth = month_revenue || row.month_revenue;
+    let finalStatus = status || row.status;
 
-    // ✅ Nếu đổi channel_id mà không truyền channel_name
-    // → thử fetch, nếu fail thì dùng "Channel Lỗi"
     if (channel_id && !channel_name) {
-      const fetchedName = await getChannelName(channel_id);
+      const fetchedName = await getChannelName(finalChannelId);
       finalName = fetchedName || "Channel Lỗi";
     }
 
@@ -131,7 +185,8 @@ exports.update = async (req, res) => {
         finalChannelId,
         finalRevenue,
         finalNetwork,
-        finalMonth
+        finalMonth,
+        finalStatus
       ],
       (err) => {
         if (err) {
@@ -145,7 +200,8 @@ exports.update = async (req, res) => {
           channel_id: finalChannelId,
           revenue: finalRevenue,
           network: finalNetwork,
-          month_revenue: finalMonth
+          month_revenue: finalMonth,
+          status: finalStatus
         });
       }
     );
@@ -168,10 +224,10 @@ exports.remove = (req, res) => {
   });
 };
 
-
+/**
+ * DELETE by condition (month_revenue + network)
+ */
 exports.removeByCondition = (req, res) => {
-  console.log("HEADERS:", req.headers["content-type"]);
-  console.log("BODY:", req.body);
   const { month_revenue, network } = req.body;
 
   if (!month_revenue || !network) {
@@ -180,15 +236,18 @@ exports.removeByCondition = (req, res) => {
     });
   }
 
-  Channel.removeByCondition(month_revenue, network, (err, deleted) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
+  Channel.removeByCondition(
+    month_revenue,
+    network,
+    (err, deleted) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        success: true,
+        deleted
+      });
     }
-
-    res.json({
-      success: true,
-      deleted
-    });
-  });
+  );
 };
-

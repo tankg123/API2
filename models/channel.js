@@ -7,11 +7,12 @@ const db = require("../database/database");
 exports.insert = (data, cb) => {
   const sql = `
     INSERT INTO channels
-      (channel_name, channel_id, revenue, network, month_revenue)
-    VALUES (?, ?, ?, ?, ?)
+    (channel_name, channel_id, revenue, network, month_revenue, status)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
   db.run(sql, data, cb);
 };
+
 
 exports.getAll = (cb) => {
   db.all(
@@ -59,4 +60,24 @@ exports.removeByCondition = (month_revenue, network, cb) => {
   db.run(sql, [month_revenue, network], function (err) {
     cb(err, this?.changes || 0);
   });
+};
+/**
+ * Lấy danh sách channel_id duy nhất (phục vụ cron)
+ */
+exports.getAllChannelIds = (cb) => {
+  db.all(
+    "SELECT DISTINCT channel_id FROM channels",
+    cb
+  );
+};
+
+/**
+ * Update status theo channel_id
+ */
+exports.updateStatusByChannelId = (channel_id, status, cb) => {
+  db.run(
+    "UPDATE channels SET status = ? WHERE channel_id = ?",
+    [status, channel_id],
+    cb
+  );
 };
