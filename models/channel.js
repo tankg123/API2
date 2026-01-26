@@ -1,8 +1,7 @@
 const db = require("../database/database");
 
 /**
- * INSERT ONLY
- * Mỗi lần POST = 1 record mới
+ * INSERT – mỗi lần POST = 1 record mới
  */
 exports.insert = (data, cb) => {
   const sql = `
@@ -12,7 +11,6 @@ exports.insert = (data, cb) => {
   `;
   db.run(sql, data, cb);
 };
-
 
 exports.getAll = (cb) => {
   db.all(
@@ -37,7 +35,8 @@ exports.update = (id, data, cb) => {
       channel_id = ?,
       revenue = ?,
       network = ?,
-      month_revenue = ?
+      month_revenue = ?,
+      status = ?
     WHERE id = ?
   `;
   db.run(sql, [...data, id], cb);
@@ -51,33 +50,15 @@ exports.remove = (id, cb) => {
   );
 };
 
+/**
+ * Delete theo điều kiện (month_revenue + network)
+ */
 exports.removeByCondition = (month_revenue, network, cb) => {
-  const sql = `
-    DELETE FROM channels
-    WHERE month_revenue = ?
-      AND network = ?
-  `;
-  db.run(sql, [month_revenue, network], function (err) {
-    cb(err, this?.changes || 0);
-  });
-};
-/**
- * Lấy danh sách channel_id duy nhất (phục vụ cron)
- */
-exports.getAllChannelIds = (cb) => {
-  db.all(
-    "SELECT DISTINCT channel_id FROM channels",
-    cb
-  );
-};
-
-/**
- * Update status theo channel_id
- */
-exports.updateStatusByChannelId = (channel_id, status, cb) => {
   db.run(
-    "UPDATE channels SET status = ? WHERE channel_id = ?",
-    [status, channel_id],
-    cb
+    "DELETE FROM channels WHERE month_revenue = ? AND network = ?",
+    [month_revenue, network],
+    function (err) {
+      cb(err, this?.changes || 0);
+    }
   );
 };

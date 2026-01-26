@@ -1,6 +1,4 @@
 require("dotenv").config(); // ⭐ BẮT BUỘC
-console.log("🚀 ChannelHealthCheck service loaded");
-require("./services/channelHealthCheck");
 
 
 
