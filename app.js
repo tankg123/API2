@@ -6,6 +6,7 @@ const express = require("express");
 const cors = require("cors");
 
 const channelRoutes = require("./routes/channel");
+const userRoutes = require("./routes/user");
 
 const app = express();
 
@@ -13,10 +14,11 @@ app.use(cors());
 app.use(express.json()); // thay cho body-parser
 
 app.get("/", (req, res) => {
-  res.json({ status: "API Channel OK" });
+  res.json({ status: "API Channel & User OK" });
 });
 
 app.use("/api/channel", channelRoutes);
+app.use("/api/user", userRoutes);
 
 const PORT = process.env.PORT || 3004;
 
