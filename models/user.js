@@ -9,7 +9,7 @@ exports.createUser = (data, callback) => {
      VALUES (?, ?, ?, ?)`,
     [Use, Pass, Status || "activate", hwid],
     function (err) {
-      callback(err, { id: this.lastID });
+      callback(err, { id: this.lastID, Use, Pass, Status: Status || "activate", hwid, Creator: new Date().toISOString() });
     }
   );
 };

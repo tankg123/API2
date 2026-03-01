@@ -16,7 +16,16 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
+  // ===== MAILS =====
+  db.run(`
+    CREATE TABLE IF NOT EXISTS mails (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user TEXT,
+      pass TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
   // ===== TABLE USERS (THÊM MỚI) =====
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -28,6 +37,7 @@ db.serialize(() => {
       hwid TEXT
     )
   `);
+  
 });
 
 module.exports = db;

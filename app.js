@@ -7,6 +7,7 @@ const cors = require("cors");
 
 const channelRoutes = require("./routes/channel");
 const userRoutes = require("./routes/user");
+const mailRoutes = require("./routes/mail");
 const apiKeyMiddleware = require("./middleware/apiKey");
 
 const app = express();
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/channel", apiKeyMiddleware, channelRoutes);
 app.use("/api/user", apiKeyMiddleware, userRoutes);
+app.use("/api/mail", apiKeyMiddleware, mailRoutes);
 
 const PORT = process.env.PORT || 3004;
 
