@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YouTube Revenue Report</title>
+
+<!-- XLSX -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f6f9fc;
+  padding:30px;
+}
+.container{
+  max-width:1300px;
+  margin:auto;
+  background:#fff;
+  border-radius:16px;
+  padding:32px;
+  box-shadow:0 14px 40px rgba(0,0,0,.08)
+}
+h2{
+  text-align:center;
+  color:#1e5ed7;
+  margin-bottom:25px
+}
+
+/* FILTER BAR */
+.filter-bar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:20px
+}
+.filter-bar select,
+.filter-bar input,
+.filter-bar button{
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  min-width:200px
+}
+.filter-bar input{
+  margin-left:auto;
+  width:320px
+}
+.refresh-btn{
+  background:#1e5ed7;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  font-weight:600
+}
+.export-btn{
+  background:#16a34a;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  font-weight:600
+}
+.refresh-btn:hover{opacity:.9}
+
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0 8px;
+}
+thead{
+  background:#1e5ed7;
+  color:#fff
+}
+th,td{
+  padding:12px;
+  font-size:14px;
+  text-align:left
+}
+th.sortable{
+  cursor:pointer
+}
+th.sortable::after{
+  content:" ⇅";
+  font-size:12px
+}
+
+/* STATUS */
+tbody tr{
+  background:#f2f6fb;
+  border-radius:12px;
+  position:relative;
+}
+tbody tr.status-active{
+  box-shadow: inset 5px 0 0 #16a34a;
+}
+tbody tr.status-die{
+  box-shadow: inset 5px 0 0 #dc2626;
+}
+tbody tr td:first-child{
+  border-radius:12px 0 0 12px;
+}
+tbody tr td:last-child{
+  border-radius:0 12px 12px 0;
+}
+
+.channel-link{
+  color:#1e5ed7;
+  font-weight:600;
+  text-decoration:none
+}
+.channel-link:hover{text-decoration:underline}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>YouTube Revenue Report</h2>
+
+  <div class="filter-bar">
+    <select id="monthFilter" onchange="applyFilters()">
+      <option value="">All Month</option>
+    </select>
+
+    <select id="networkFilter" onchange="applyFilters()">
+      <option value="">All Network</option>
+      <option>Ohenemedia - Music</option>
+      <option>Ohenemedia - Entertainment</option>
+      <option>TL Network ( Music)</option>
+      <option>Bản Quyền Số Vietnam</option>
+      <option>Kid's Toy's</option>
+      <option>Ahorafilm</option>
+      <option>The S&D Music Group</option>
+    </select>
+
+    <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+
+    <!-- ✅ EXPORT -->
+    <button class="export-btn" onclick="exportExcel()">Export Excel</button>
+
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search Channel ID, Name, Network..."
+      onkeyup="applyFilters()"
+    >
+  </div>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Channel Name</th>
+        <th>Channel ID</th>
+        <th>Month Revenue</th>
+        <th class="sortable" onclick="sortByRevenue()">Revenue</th>
+        <th>Network</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const API_URL = "http://localhost:3004/api/channel";
+const API_KEY = "ANS@123123";
+
+let tableData = [];
+let filteredData = [];
+let revenueSortAsc = false;
+
+/* INIT MONTH */
+(function initMonth(){
+  const select = document.getElementById("monthFilter");
+  for(let y=2025;y<=2026;y++){
+    for(let m=1;m<=12;m++){
+      if((y===2025 && m<10)) continue;
+      const val = `M${String(m).padStart(2,"0")}.${y}`;
+      const op = document.createElement("option");
+      op.value = val;
+      op.textContent = val;
+      select.appendChild(op);
+    }
+  }
+})();
+
+/* LOAD */
+function refreshData(){
+  fetch(API_URL, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY
+    }
+  })
+  .then(res => {
+    if(!res.ok) throw new Error("API Error");
+    return res.json();
+  })
+  .then(data=>{
+    tableData = data;
+    applyFilters();
+  })
+  .catch(err=>{
+    console.error(err);
+    alert("Unauthorized hoặc API Key không hợp lệ");
+  });
+}
+
+/* FILTER */
+function applyFilters(){
+  const q = searchInput.value.toLowerCase();
+  const month = monthFilter.value;
+  const network = networkFilter.value;
+
+  filteredData = tableData.filter(r=>{
+    const matchSearch =
+      String(r.channel_id).toLowerCase().includes(q) ||
+      String(r.channel_name||"").toLowerCase().includes(q) ||
+      String(r.network||"").toLowerCase().includes(q);
+
+    const matchMonth = !month || r.month_revenue === month;
+    const matchNetwork = !network || r.network === network;
+
+    return matchSearch && matchMonth && matchNetwork;
+  });
+
+  renderTable(filteredData);
+}
+
+/* SORT */
+function sortByRevenue(){
+  revenueSortAsc = !revenueSortAsc;
+
+  filteredData.sort((a,b)=>{
+    const r1 = Number(a.revenue||0);
+    const r2 = Number(b.revenue||0);
+    return revenueSortAsc ? r1 - r2 : r2 - r1;
+  });
+
+  renderTable(filteredData);
+}
+
+/* ✅ EXPORT EXCEL */
+function exportExcel(){
+
+  if(filteredData.length === 0){
+    alert("Không có dữ liệu để export");
+    return;
+  }
+
+  const data = filteredData.map(r=>({
+    ID: r.id,
+    "Channel Name": r.channel_name || "",
+    "Channel ID": r.channel_id,
+    "Month Revenue": r.month_revenue,
+    Revenue: Number(r.revenue || 0),
+    Network: r.network
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Revenue");
+
+  XLSX.writeFile(wb, "YouTube_Revenue.xlsx");
+}
+
+/* RENDER */
+function renderTable(data){
+  const tbody = document.querySelector("#dataTable tbody");
+  tbody.innerHTML = "";
+
+  data.forEach(r=>{
+    const tr = document.createElement("tr");
+
+    if(r.status === "active"){
+      tr.classList.add("status-active");
+    }else if(r.status === "die"){
+      tr.classList.add("status-die");
+    }
+
+    tr.innerHTML = `
+      <td>${r.id}</td>
+      <td>${r.channel_name||""}</td>
+      <td>
+        <a class="channel-link"
+           href="https://www.youtube.com/channel/${r.channel_id}"
+           target="_blank">
+          ${r.channel_id}
+        </a>
+      </td>
+      <td>${r.month_revenue || ""}</td>
+      <td>$${Number(r.revenue||0).toFixed(2)}</td>
+      <td>${r.network||""}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* INIT */
+refreshData();
+</script>
+
+</body>
+</html>

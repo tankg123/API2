@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YouTube Revenue Import</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f6f9fc;
+  padding:30px;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  background:#fff;
+  border-radius:16px;
+  padding:32px;
+  box-shadow:0 14px 40px rgba(0,0,0,.08)
+}
+h2{
+  text-align:center;
+  color:#1e5ed7;
+  margin-bottom:28px
+}
+.row{
+  display:flex;
+  gap:18px;
+  margin-bottom:20px;
+  flex-wrap:wrap
+}
+.col{
+  flex:1;
+  min-width:260px
+}
+label{
+  font-weight:600;
+  margin-bottom:6px;
+  display:block
+}
+select,input[type="file"]{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ccc
+}
+.btn{
+  background:#1e5ed7;
+  color:#fff;
+  border:none;
+  padding:14px 32px;
+  border-radius:12px;
+  font-weight:600;
+  cursor:pointer
+}
+.btn-danger{
+  background:#c81e1e
+}
+.btn:hover{opacity:.9}
+
+/* Progress */
+.progress-box{
+  margin-top:22px
+}
+.progress-bar{
+  height:18px;
+  background:#e6ecf7;
+  border-radius:10px;
+  overflow:hidden
+}
+.progress-fill{
+  height:100%;
+  width:0%;
+  background:#1e5ed7;
+  transition:width .25s
+}
+.progress-text{
+  margin-top:6px;
+  font-weight:600
+}
+
+/* Status */
+.status{
+  margin-top:22px;
+  padding:14px;
+  border-radius:10px;
+  font-weight:600;
+  display:none
+}
+.success{
+  background:#e6f6ec;
+  color:#1f7a43
+}
+.error{
+  background:#fdecea;
+  color:#b42318
+}
+
+/* Table */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:28px
+}
+thead{
+  background:#1e5ed7;
+  color:#fff
+}
+th,td{
+  padding:10px;
+  font-size:13px;
+  text-align:left
+}
+tbody tr:nth-child(even){
+  background:#f2f6fb
+}
+.log-success{color:#1f7a43;font-weight:600}
+.log-fail{color:#b42318;font-weight:600}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>YouTube Revenue Import</h2>
+
+<div class="row">
+  <div class="col">
+    <label>Month Revenue</label>
+    <select id="monthRevenue">
+      <option>M01.2025</option><option>M02.2025</option><option>M03.2025</option>
+      <option>M04.2025</option><option>M05.2025</option><option>M06.2025</option>
+      <option>M07.2025</option><option>M08.2025</option><option>M09.2025</option>
+      <option>M10.2025</option><option>M11.2025</option><option>M12.2025</option>
+      <option>M01.2026</option><option>M02.2026</option><option>M03.2026</option>
+      <option>M04.2026</option><option>M05.2026</option><option>M06.2026</option>
+      <option>M07.2026</option><option>M08.2026</option><option>M09.2026</option>
+      <option>M10.2026</option><option>M11.2026</option><option>M12.2026</option>
+    </select>
+  </div>
+
+  <div class="col">
+    <label>Network</label>
+    <select id="network">
+      <option>Ohenemedia - Music</option>
+      <option>Ohenemedia - Entertainment</option>
+      <option>TL Network ( Music)</option>
+      <option>Bản Quyền Số Vietnam</option>
+      <option>Kid's Toy's</option>
+      <option>Ahorafilm</option>
+      <option>The S&D Music Group</option>
+    </select>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+    <label>Upload Excel File</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+</div>
+
+<div class="row">
+  <button class="btn" onclick="startImport()">POST IMPORT</button>
+  <button class="btn btn-danger" onclick="deleteData()">DELETE DATA</button>
+
+  <!-- NEW DELETE BY REVENUE -->
+  <input type="number" id="deleteRevenueInput" placeholder="Revenue <" style="width:120px;padding:10px;border-radius:10px;border:1px solid #ccc">
+  <button class="btn btn-danger" style="padding:10px 18px;font-size:13px" onclick="deleteByRevenue()">
+    Delete < Revenue
+  </button>
+</div>
+
+<div class="progress-box">
+  <div class="progress-bar">
+    <div id="progressFill" class="progress-fill"></div>
+  </div>
+  <div id="progressText" class="progress-text">0%</div>
+</div>
+
+<div id="statusBox" class="status"></div>
+
+<table id="logTable" style="display:none">
+<thead>
+<tr>
+  <th>#</th>
+  <th>Channel ID</th>
+  <th>Revenue</th>
+  <th>Status</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<script>
+const API_URL = "http://localhost:3004/api/channel/import";
+const DELETE_API = "http://localhost:3004/api/channel";
+const DELETE_BY_REVENUE_API = "http://localhost:3004/api/channel/delete-by-revenue";
+
+const API_KEY = "ANS@123123";
+const CONCURRENT_LIMIT = 5;
+
+let rows = [];
+let completed = 0;
+let success = 0;
+let fail = 0;
+
+/* LOAD EXCEL */
+fileInput.addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    const wb = XLSX.read(new Uint8Array(evt.target.result), {type:"array"});
+    const raw = XLSX.utils.sheet_to_json(
+      wb.Sheets[wb.SheetNames[0]],
+      {defval:""}
+    );
+
+    rows = raw.map((r,i)=>({
+      index:i+1,
+      channelId:String(r["Channel ID"]).trim(),
+      revenue:Number(r["Revenue"])
+    })).filter(r=>r.channelId && !isNaN(r.revenue));
+
+    logTable.style.display="table";
+    logTable.querySelector("tbody").innerHTML="";
+    completed = success = fail = 0;
+    updateProgress();
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+/* START IMPORT */
+async function startImport(){
+  if(!rows.length){
+    alert("No valid data to import");
+    return;
+  }
+
+  const month = monthRevenue.value;
+  const networkVal = network.value;
+
+  const tasks = rows.map(r=>()=>postRow(r,month,networkVal));
+  await runPool(tasks, CONCURRENT_LIMIT);
+
+  showStatus(
+    `Done | Total: ${rows.length} | Success: ${success} | Fail: ${fail}`,
+    fail === 0
+  );
+}
+
+/* DELETE DATA */
+async function deleteData(){
+  const month = monthRevenue.value;
+  const networkVal = network.value;
+
+  if(!confirm(`Delete all data of:\n\nMonth: ${month}\nNetwork: ${networkVal}\n\nThis action cannot be undone.`)){
+    return;
+  }
+
+  try{
+    const res = await fetch(DELETE_API,{
+      method:"DELETE",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": API_KEY
+      },
+      body:JSON.stringify({
+        month_revenue: month,
+        network: networkVal
+      })
+    });
+
+    const data = await res.json();
+
+    if(res.ok){
+      showStatus(`Delete success | Records deleted: ${data.deleted}`, true);
+    }else{
+      showStatus(data.message || "Delete failed", false);
+    }
+  }catch(err){
+    showStatus("Delete failed: Network error", false);
+  }
+}
+
+/* NEW DELETE BY REVENUE */
+async function deleteByRevenue(){
+  const revenueVal = Number(deleteRevenueInput.value);
+
+  if(isNaN(revenueVal)){
+    alert("Please enter valid revenue number");
+    return;
+  }
+
+  if(!confirm(`Delete all records with revenue < ${revenueVal} ?`)){
+    return;
+  }
+
+  try{
+    const res = await fetch(DELETE_BY_REVENUE_API,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": API_KEY
+      },
+      body:JSON.stringify({
+        revenue: revenueVal
+      })
+    });
+
+    const data = await res.json();
+
+    if(res.ok){
+      showStatus(`Delete success | Records deleted: ${data.deleted}`, true);
+    }else{
+      showStatus(data.message || "Delete failed", false);
+    }
+  }catch(err){
+    showStatus("Delete failed: Network error", false);
+  }
+}
+
+/* WORKER POOL */
+async function runPool(tasks, limit){
+  let i = 0;
+  async function runner(){
+    while(i < tasks.length){
+      const task = tasks[i++];
+      await task();
+    }
+  }
+  await Promise.all(Array.from({length:limit}, runner));
+}
+
+/* POST 1 ROW */
+async function postRow(row, month, networkVal){
+  let ok = false;
+  try{
+    const res = await fetch(API_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": API_KEY
+      },
+      body:JSON.stringify({
+        channel_id: row.channelId,
+        revenue: row.revenue,
+        network: networkVal,
+        month_revenue: month
+      })
+    });
+    ok = res.ok;
+  }catch(e){
+    ok = false;
+  }
+
+  completed++;
+  ok ? success++ : fail++;
+  addLog(row.index, row.channelId, row.revenue, ok);
+  updateProgress();
+}
+
+/* UI HELPERS */
+function updateProgress(){
+  const percent = rows.length
+    ? Math.round((completed / rows.length) * 100)
+    : 0;
+  progressFill.style.width = percent + "%";
+  progressText.innerText = percent + "%";
+}
+
+function addLog(i,id,rev,ok){
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${i}</td>
+    <td>${id}</td>
+    <td>${rev}</td>
+    <td class="${ok?"log-success":"log-fail"}">
+      ${ok?"SUCCESS":"FAIL"}
+    </td>`;
+  logTable.querySelector("tbody").appendChild(tr);
+}
+
+function showStatus(msg,ok){
+  statusBox.className = "status " + (ok?"success":"error");
+  statusBox.innerText = msg;
+  statusBox.style.display="block";
+  setTimeout(()=>statusBox.style.display="none",15000);
+}
+</script>
+
+</body>
+</html>

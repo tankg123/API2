@@ -62,3 +62,42 @@ exports.removeByCondition = (month_revenue, network, cb) => {
     }
   );
 };
+/**
+ * DELETE theo revenue < X
+ */
+exports.removeByRevenue = (revenue, cb) => {
+  db.run(
+    "DELETE FROM channels WHERE revenue < ?",
+    [revenue],
+    function (err) {
+      cb(err, this?.changes || 0);
+    }
+  );
+};
+
+
+/**
+ * Lấy dữ liệu theo tháng
+ */
+exports.getRevenueByMonth = (month_revenue, cb) => {
+  db.all(
+    "SELECT * FROM channels WHERE month_revenue = ?",
+    [month_revenue],
+    cb
+  );
+};
+
+
+/**
+ * Lấy dữ liệu theo tháng + network
+ */
+exports.getRevenueByMonthNetwork = (month_revenue, network, cb) => {
+  db.all(
+    `
+    SELECT * FROM channels 
+    WHERE month_revenue = ? AND network = ?
+    `,
+    [month_revenue, network],
+    cb
+  );
+};

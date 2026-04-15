@@ -199,3 +199,86 @@ exports.removeByCondition = (req, res) => {
     res.json({ success: true, deleted });
   });
 };
+/**
+ * DELETE theo revenue nhỏ hơn X
+ * POST /delete-by-revenue
+ * body: { revenue: 3 }
+ */
+exports.removeByRevenue = (req, res) => {
+  const { revenue } = req.body;
+
+  if (revenue == null) {
+    return res.status(400).json({
+      message: "revenue is required"
+    });
+  }
+
+  Channel.removeByRevenue(Number(revenue), (err, deleted) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    res.json({
+      success: true,
+      deleted,
+      condition: `revenue < ${revenue}`
+    });
+  });
+};
+
+
+/**
+ * GET doanh thu theo tháng
+ * POST /revenue-by-month
+ * body: { month_revenue: "M12.2025" }
+ */
+exports.getRevenueByMonth = (req, res) => {
+  const { month_revenue } = req.body;
+
+  if (!month_revenue) {
+    return res.status(400).json({
+      message: "month_revenue is required"
+    });
+  }
+
+  Channel.getRevenueByMonth(month_revenue, (err, rows) => {
+    if (err) return res.status(500).json(err);
+
+    const total = rows.reduce((sum, r) => sum + (r.revenue || 0), 0);
+
+    res.json({
+      success: true,
+      month_revenue,
+      total_revenue: total,
+      data: rows
+    });
+  });
+};
+
+
+/**
+ * GET doanh thu theo tháng + network
+ * POST /revenue-by-month-network
+ * body: { month_revenue: "...", network: "..." }
+ */
+exports.getRevenueByMonthNetwork = (req, res) => {
+  const { month_revenue, network } = req.body;
+
+  if (!month_revenue || !network) {
+    return res.status(400).json({
+      message: "month_revenue and network are required"
+    });
+  }
+
+  Channel.getRevenueByMonthNetwork(month_revenue, network, (err, rows) => {
+    if (err) return res.status(500).json(err);
+
+    const total = rows.reduce((sum, r) => sum + (r.revenue || 0), 0);
+
+    res.json({
+      success: true,
+      month_revenue,
+      network,
+      total_revenue: total,
+      data: rows
+    });
+  });
+};
