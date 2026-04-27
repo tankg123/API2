@@ -2,9 +2,23 @@ const ChangeOwner = require("../models/changeOwner");
 
 // CREATE
 exports.create = (req, res) => {
+  const { brand_account, current_role, email } = req.body;
+
+  // 🔥 VALIDATE BẮT BUỘC
+  if (!brand_account || !current_role || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "brand_account, current_role, email are required"
+    });
+  }
+
   ChangeOwner.create(req.body, (err, data) => {
     if (err) return res.status(500).json(err);
-    res.json({ success: true, data });
+
+    res.json({
+      success: true,
+      data
+    });
   });
 };
 
@@ -26,13 +40,22 @@ exports.getOne = (req, res) => {
 
 // UPDATE
 exports.update = (req, res) => {
+  const { brand_account, current_role, email } = req.body;
+
+  if (!brand_account || !current_role || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "brand_account, current_role, email are required"
+    });
+  }
+
   ChangeOwner.update(req.params.id, req.body, (err, result) => {
     if (err) return res.status(500).json(err);
     res.json(result);
   });
 };
 
-// DELETE
+// DELETE ONE
 exports.delete = (req, res) => {
   ChangeOwner.remove(req.params.id, (err, result) => {
     if (err) return res.status(500).json(err);
@@ -40,6 +63,7 @@ exports.delete = (req, res) => {
   });
 };
 
+// DELETE ALL
 exports.deleteAll = (req, res) => {
   ChangeOwner.deleteAll((err, result) => {
     if (err) return res.status(500).json(err);
@@ -51,17 +75,18 @@ exports.deleteAll = (req, res) => {
   });
 };
 
+// CHECK EXISTS
 exports.checkExists = (req, res) => {
-  const { brand_account } = req.body;
+  const { brand_account, email } = req.body;
 
-  if (!brand_account) {
+  if (!brand_account || !email) {
     return res.status(400).json({
       success: false,
-      message: "brand_account is required"
+      message: "brand_account and email are required"
     });
   }
 
-  ChangeOwner.checkExists(brand_account, (err, exists) => {
+  ChangeOwner.checkExists(brand_account, email, (err, exists) => {
     if (err) return res.status(500).json(err);
 
     res.json({

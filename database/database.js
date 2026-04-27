@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS change_owner (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   brand_account TEXT,
   current_role TEXT,
+  email TEXT,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 )
 `);
